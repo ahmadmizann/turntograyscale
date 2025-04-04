@@ -1,33 +1,42 @@
-import gradio as gr
+import fasthtml
 import numpy as np
 from PIL import Image
-import tempfile
+import os
 
-# Function to convert image to grayscale manually
-def convert_to_grayscale(input_image):
-    # Convert the input image to a numpy array
-    img_array = np.array(input_image)
+app = fasthtml.App()
 
-    # Calculate the grayscale values using the luminance formula
-    gray_image = 0.299 * img_array[:, :, 0] + 0.587 * img_array[:, :, 1] + 0.114 * img_array[:, :, 2]
+UPLOAD_FOLDER = "uploads/"
+OUTPUT_FOLDER = "grayscale/"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
-    # Convert the grayscale values to an 8-bit format (0-255) and create a new image
-    gray_image = gray_image.astype(np.uint8)
-    
-    # Save the grayscale image to a temporary file
-    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".jpg")
-    Image.fromarray(gray_image).save(temp_file.name)
+@app.route("/", methods=["GET", "POST"])
+async def home(request):
+    if request.method == "POST":
+        uploaded_file = request.files.get("image")
+        if uploaded_file:
+            image_path = os.path.join(UPLOAD_FOLDER, uploaded_file.filename)
+            output_path = os.path.join(OUTPUT_FOLDER, "grayscale_" + uploaded_file.filename)
 
-    return Image.fromarray(gray_image), temp_file.name  # Return both the image and the path to the temporary file
+            # Save the uploaded image
+            with open(image_path, "wb") as f:
+                f.write(uploaded_file.read())
 
-# Gradio Interface version
-gr.Interface(
-    fn=convert_to_grayscale,
-    inputs=gr.Image(type="pil", label="Upload Your Image"),
-    outputs=[gr.Image(type="pil", label="Grayscale Image"), gr.File(label="Download Grayscale Image")],  # Multiple outputs
-    examples=[
-        ["panda.jpg"],
-        ["tiger.jpg"]
-    ],
-    allow_flagging="never"  # Disable the flag button
-).launch()
+            # Convert to grayscale
+            img = Image.open(image_path)
+            img_array = np.array(img)
+            gray_image = 0.299 * img_array[:, :, 0] + 0.587 * img_array[:, :, 1] + 0.114 * img_array[:, :, 2]
+            gray_image = gray_image.astype(np.uint8)
+
+            # Save grayscale image
+            Image.fromarray(gray_image).save(output_path)
+
+            return {
+                "message": "Success!",
+                "gray_image_url": f"/static/{output_path}",
+            }
+
+    return fasthtml.render("index.html")
+
+if __name__ == "__main__":
+    app.run(debug=True)
