@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image to Grayscale</title>
+</head>
+<body>
+    <h1>Convert Image to Grayscale</h1>
+    <form action="/" method="post" enctype="multipart/form-data">
+        <input type="file" name="image" accept="image/*" required>
+        <button type="submit">Submit</button>
+    </form>
+
+    {% if gray_image_url %}
+        <h2>Grayscale Image:</h2>
+        <img src="{{ gray_image_url }}" alt="Grayscale Image">
+        <br>
+        <a href="{{ gray_image_url }}" download>Download Grayscale Image</a>
+    {% endif %}
+</body>
+</html>
